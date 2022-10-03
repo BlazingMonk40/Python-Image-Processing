@@ -5,13 +5,22 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
+            "name": "Desktop",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "BatchResize.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["C:\\Users\\popta/Desktop/100Media"]
+            "args": ["C:/Users/popta/Desktop/100Media"]
+        },
+        {
+            "name": "Laptop",
+            "type": "python",
+            "request": "launch",
+            "program": "BatchResize.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["C:/Users/Kenneth Brown/Desktop/100Media"]
         }
     ]
 }

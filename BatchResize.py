@@ -90,8 +90,9 @@ def byteConversion(bytes):
 if(len(sys.argv) > 1):
     file_list = [x for x in sorted([x for x in os.listdir(sys.argv[1])])]
     #C:\Users\popta\Desktop\100Media\100Media_Resized
-    newDirectory = makeFileUpDir()                            #Path to new folder for Resized Images
+    newDirectory = makeFileUpDir()                              #Path to new folder for Resized Images
     for i in range (0, len(file_list)):
+        if(str(file_list[i])[-4:0] == ".JPG" or ".PNG"):
             if(not newFileName in file_list[i]):
                 imageName = file_list[i]                        #Get image name
                 imagePath = sys.argv[1]+"\\"+imageName          #Get image path
@@ -101,10 +102,12 @@ if(len(sys.argv) > 1):
                 
                 printFileProcessing()
                 
-                resizedImage = image.resize((1920,1080))        #Resize Image
+                resizedImage = image.resize((960,540))        #Resize Image
                 resizedImage.save(newImagePath, "JPEG")         #Save image to new file path
                 
                 printFileDone()
+        else:
+            print('Wrong file type for file:', file_list[i])
     
     print(getFolderSize(sys.argv[1])[0])
     print(getFolderSize(newDirectory)[0] + " Compression:", str(getPercentChange(getFolderSize(sys.argv[1])[1][0], getFolderSize(newDirectory)[1][0]))[0:5],"%")

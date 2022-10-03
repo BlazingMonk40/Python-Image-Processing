@@ -1,10 +1,11 @@
-@echo off
+::@echo off
 set /p Input=Drag File Here And Press Enter:
 
 ::echo ..%Input%
 If "%Input%" EQU "" goto default
 
-python BatchResize.py %Input%
+python3 "%~dp0BatchResize.py" %Input%
+PAUSE
 goto end
 
 :default
