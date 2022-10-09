@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "Desktop",
             "type": "python",
@@ -21,6 +22,15 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": ["C:/Users/Kenneth Brown/Desktop/100Media"]
+        },
+        {
+            "name": "Laptop Video",
+            "type": "python",
+            "request": "launch",
+            "program": "BatchResize.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["C:/Users/Kenneth Brown/Desktop/100MediaVideo"]
         }
     ]
 }
