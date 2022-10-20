@@ -31,6 +31,15 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": ["C:/Users/Kenneth Brown/Desktop/100MediaVideo"]
+        },
+        {
+            "name": "Desktop Video",
+            "type": "python",
+            "request": "launch",
+            "program": "BatchResize.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["M:/Trailcam"] //First arg: root file, Second Arg: 0 - Images, 1 - Video
         }
     ]
 }

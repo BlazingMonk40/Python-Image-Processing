@@ -1,3 +1,3 @@
-python3 "%~dp0BatchResize.py" %*
+python "%~dp0BatchResize.py" %*
 
 PAUSE

@@ -1,69 +1,135 @@
-from codecs import CodecInfo
-from dis import Bytecode
+from asyncio.windows_events import NULL
+from cgi import print_exception
+from msilib.schema import File
 import os
 import sys
 import datetime
+from traceback import print_exc
+import shutil
 
 from PIL import Image
 from moviepy.editor import *
 
+if(not os.path.exists("BatchResizeLogFiles")):
+    os.mkdir("BatchResizeLogFiles")
+if(os.path.exists("BatchResizeLogFiles")): 
+    filename = "BatchResize_ErrorLog "+str(datetime.datetime.now().replace(microsecond=0))+".txt"
+    filename = filename.replace(":", ",")
+    filename = os.path.join("BatchResizeLogFiles", filename)
+    error_log = open(str(filename), 'w')
+else:
+    print("Error Log File could not be established.")
+    sys.exit()
 
+newFileName = "_ResizedVideos"
+def printSpacer(symbol = "-", length = 10):
+        """Prints a line of symbols."""
+        rtn_string = ""
+        for i in range(length):
+            rtn_string += str(symbol)
+        
+        return rtn_string
+
+def IndexOf(substring, string):
+    index = -1
+    for i in range(0, len(string)):
+        if(string[i] == substring):
+            index = i+1
+    return index
+
+def makeFileUpDir(dir):
+    """Put new folder inside one directory up"""
+    dir = os.path.normpath(dir)
+    upDirPath = dir+newFileName
+    if(not os.path.exists(upDirPath)):
+        os.mkdir(upDirPath)
+    return upDirPath
 
 def VideoProcessing():
-    newFileName = "_ResizedVideos"
-    def IndexOf(substring, string):
-        index = -1
-        for i in range(0, len(string)):
-            if(string[i] == substring):
-                index = i+1
-        return index
-
-    def makeFileUpDir():
-        """Put new folder inside one directory up"""
-        upDirIndex = IndexOf("/", sys.argv[1])
-        if(upDirIndex == -1):
-            upDirIndex = IndexOf("\\", sys.argv[1])
-        fileName = sys.argv[1][upDirIndex:]
-        upDir = sys.argv[1][0:upDirIndex]+fileName
-        upDirPath = upDir+newFileName
-        if(not os.path.exists(upDirPath)):
-            os.mkdir(upDirPath)
-        #print("path:", upDirPath)
-        return upDirPath
-
+    
     if(len(sys.argv) > 1):
-        file_list = [x for x in sorted([x for x in os.listdir(sys.argv[1])])]
-        #C:\Users\popta\Desktop\100Media\100Media_Resized
-        #startTime = datetime.datetime.now("%H")
-        newDirectory = makeFileUpDir()                              #Path to new folder for Resized Videos
-        for i in range (0, len(file_list)):
-            if(str(file_list[i])[-4:0] == ".AVI" or ".MP4"):
-                if(not newFileName in file_list[i]):
-                    videoName = file_list[i]                        #Get video name
-                    videoPath = sys.argv[1]+"\\"+videoName          #Get video path
-                    video = VideoFileClip(videoPath)                   #Get video at video path
-                    
-                    newVideoPath = newDirectory+"/"+videoName       #Make new file path for the resized video
-                    
-                    #printFileProcessing()
-                    
-                    resizedVideo = video.resize(.75)          #Resize video
-                    #Codecs: libx264, mpeg4, rawvideo, png libvorbis, libvpx || || libx264, mpeg4 
-                    resizedVideo.write_videofile(newVideoPath, codec='libx264')     #Save video to new file path
-                    
-                    #printFileDone()
-            else:
-                print('Wrong file type for file:', file_list[i])
+        sys_arg = os.path.normpath(sys.argv[1])
+        if(not os.path.exists(sys_arg)): print("No such directory found!")
+        else:
+            startTime = datetime.datetime.now()
+            newDirectory = makeFileUpDir(sys_arg)#Path to new folder for Resized Videos
+            
+            old_dir = ""
+            for dir, subdirs, files in os.walk(sys_arg):
+                
+                    #C:\Users\popta\Desktop\100Media\100Media_Resized
+                    if(dir == sys.argv[1]): continue #Don't repeat the root directory
+                    dir = os.path.normpath(dir)
+                    old_dir_basename = os.path.basename(old_dir)
+                    dir_split0 = os.path.basename(os.path.split(dir)[0])
+                    if(not old_dir == "" and not old_dir_basename == dir_split0):
+                        newDirectory = os.path.join(os.path.split(newDirectory)[0], os.path.basename(dir))
+                    else:
+                        old_dir = dir
+                        dir_name = os.path.basename(dir)
+                        newDirectory = os.path.join(newDirectory, dir_name)
+                    if(not os.path.exists(newDirectory)):
+                        os.mkdir(newDirectory)
+                    for file in files:
+                        try:
+                            ext = os.path.splitext(file)[-1].lower()
+                            #Check for correct file extension and that the file has not already been resized
+                            if(ext == ".avi" or ext == ".mp4" and not "__" in file):
+                                print(dir + "/" + file)
+                                if(not newFileName in file):
+                                                    
+                                    videoName = file                       #Get video name
+                                    videoPath = os.path.join(dir,videoName)          #Get video path
+                                    video = VideoFileClip(videoPath)       #Get video at video path
+                                    
+                                    newVideoPath = os.path.join(newDirectory,videoName)       #Make new file path for the resized video
+                                    
+                                    fileStartTime = datetime.datetime.now()
+                                    
+                                    resizedVideo = video.resize(.75)       #Resize video
+                                    #Codecs: libx264, mpeg4, rawvideo, png libvorbis, libvpx || || libx264, mpeg4 
+                                    resizedVideo.write_videofile(newVideoPath, codec='libx264', threads = 750)     #Save video to new file path
+                                    completedResizeVideoPath = os.path.join(dir,videoName)
+                                    os.rename(videoPath, completedResizeVideoPath)
+                                    fileEndTime = datetime.datetime.now()
+                                    print("--------------------\n"+videoName+" Compression Start Time: ",fileStartTime.replace(microsecond=0),"\n")
+                                    print(videoName+" Compression End Time: ",fileEndTime.replace(microsecond=0))
+                                    print("\n"+videoName+" Compression Time to Complete: ",(fileEndTime.replace(microsecond=0) - fileStartTime.replace(microsecond=0)),"\n--------------------\n")
+                                    #printFileDone()
+                            else:
+                                print('Wrong file type for file:', file)
+                        except KeyboardInterrupt as e:
+                            print("\n A Keyboard Interrupt occured.")
+                            error_statement = (str(datetime.datetime.now().replace(microsecond=0)), "Keyboard Interrupt")
+                            sys.exit()
+                        except Exception as e:
+                            print("\nAn Error occurred on: ", file, "\n")
+                            error_statement = (str(datetime.datetime.now().replace(microsecond=0)), videoPath)
+                            error_log.write(printSpacer(length = 100)+"\n")
+                            error_log.write("Error occured during video processing: \n" + str(e).splitlines()[0])
+                            error_log.write("\n"+str(error_statement)+"\n")
+                            error_log.write(printSpacer(length = 100)+"\n")
+                            error_log.flush()
+                            #continue
+            
+            endTime = datetime.datetime.now()
+            #os.rename(dir, dir+"_ResizingComplete")
+            print("\n--------------------\nProgram Start Time: "+str(startTime)+"\n")
+            print("Program End Time: ",endTime.replace(microsecond=0),"\n")
+            print("Program Time to Complete: ",(endTime.replace(microsecond=0) - startTime.replace(microsecond=0)),"\n--------------------\n")
 
-        print("Time to complete: ",)
-        
-        #print(getFolderSize(sys.argv[1])[0])
-        #print(getFolderSize(newDirectory)[0] + " Compression:", str(getPercentChange(getFolderSize(sys.argv[1])[1][0], getFolderSize(newDirectory)[1][0]))[0:5],"%")
-           
+    else:
+        print("Args not found")
+            
+
+
+
     
 def ImageProcessing():
     newFileName = "_ResizedImages"
-    def IndexOf(substring, string):
+    
+    def LastIndexOf(substring, string):
+        """Returns the index of the last occurence of a substring"""
         index = -1
         for i in range(0, len(string)):
             if(string[i] == substring):
@@ -78,9 +144,9 @@ def ImageProcessing():
         return newFolderPath
     def makeFileUpDir():
         """Put new folder inside one directory up"""
-        upDirIndex = IndexOf("/", sys.argv[1])
+        upDirIndex = LastIndexOf("/", sys.argv[1])
         if(upDirIndex == -1):
-            upDirIndex = IndexOf("\\", sys.argv[1])
+            upDirIndex = LastIndexOf("\\", sys.argv[1])
         fileName = sys.argv[1][upDirIndex:]
         upDir = sys.argv[1][0:upDirIndex]+fileName
         upDirPath = upDir+newFileName
@@ -173,12 +239,26 @@ def ImageProcessing():
         print("Error! No files recieved.")
 
 def main():
-    type = input("For Image Processing Enter '0':\nFor Video Processing Enter '1':\nInput:")
-    if type == '0':
-        ImageProcessing()
-    elif type == '1':
-        VideoProcessing()
-    return 0
+    if(len(sys.argv) > 2):
+        type = sys.argv[2]
+    else:
+        type = input("For Image Processing Enter '0':\nFor Video Processing Enter '1':\nInput: ")
+    try:
+        
+        if type == '0':
+            ImageProcessing()
+        elif type == '1':
+            VideoProcessing()
+    except SystemExit as sys_exit:
+        print("System Error.")
+        error_log.write(printSpacer('*', 50))
+        error_log.write("\nSystem exited at: " + str(datetime.datetime.now().replace(microsecond=0))+"\n"+str(sys_exit))
+        error_log.write(printSpacer("*", 50))
+        error_log.close()
+        sys.exit()
+
+    finally:
+        return 0
 
 if __name__ == "__main__":
     main()
