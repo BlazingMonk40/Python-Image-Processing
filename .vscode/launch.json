@@ -39,7 +39,7 @@
             "program": "BatchResize.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["M:/Trailcam"] //First arg: root file, Second Arg: 0 - Images, 1 - Video
+             //First arg: root file, Second Arg: 0 - Images, 1 - Video
         }
     ]
 }

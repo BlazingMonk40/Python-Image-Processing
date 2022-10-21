@@ -7,12 +7,11 @@ from moviepy.editor import *
 if(not os.path.exists("VideoMakerLogFiles")):
     os.mkdir("VideoMakerLogFiles")
 if(os.path.exists("VideoMakerLogFiles")): 
-    filename = "VideoMaker_ErrorLog "+str(datetime.datetime.now().replace(microsecond=0))+".txt"
-    filename = filename.replace(":", ",")
+    filename = "VideoMaker_ErrorLog.txt"
     filename = os.path.join("VideoMakerLogFiles", filename)
     error_log = open(str(filename), 'w')
 else:
-    print("Error Log File could not be established.")
+    print("Error! Log File could not be established.")
     sys.exit()
 
 def IndexOf(substring, string):
@@ -23,6 +22,15 @@ def IndexOf(substring, string):
         return index
 
 newFileName = "_Movie"
+
+def printSpacer(symbol = "-", length = 10):
+        """Prints a line of symbols."""
+        rtn_string = ""
+        for i in range(length):
+            rtn_string += str(symbol)
+        
+        return rtn_string
+
 def makeFileUpDir(dir):
         """Put new folder inside one directory up"""
         dir = os.path.normpath(dir)
@@ -42,19 +50,36 @@ def VideoMaker():
         if(not os.path.exists(sys.argv[1])): 
             print("No such directory found!")
         else:
-            startTime = datetime.datetime.now()
-            newDirectory = makeFileUpDir(sys.argv[1])#Path to new folder for Resized Videos
-            clips = []
-            for dir, subdirs, files in os.walk(sys.argv[1]):
-                print("\nGathering files from '" + dir + "' please wait...")
-                for file in files:
-                    clips.append(VideoFileClip(os.path.join(sys.argv[1], file)))
-            movie = concatenate_videoclips(clips)
-            
-            newMoviePath = os.path.join(newDirectory, os.path.split(sys.argv[1])[1])
-            movie.write_videofile(newMoviePath+".avi", codec = "libx264", preset="superfast")
-            endTime = datetime.datetime.now()
-            printRuntime(startTime, endTime)
+            try:
+                startTime = datetime.datetime.now()
+                newDirectory = makeFileUpDir(sys.argv[1])#Path to new folder for Resized Videos
+                clips = []
+                for dir, subdirs, files in os.walk(sys.argv[1]):
+                    print("\nGathering files from '" + os.path.basename(dir) + "' please wait...")
+                    for file in files:
+                        clips.append(VideoFileClip(os.path.join(sys.argv[1], file)))
+                        
+                print("\nFiles gathered. Building movie...\n")
+                movie = concatenate_videoclips(clips)
+                
+                newMoviePath = os.path.join(newDirectory, os.path.split(sys.argv[1])[1])
+                movie.write_videofile(newMoviePath+".avi", codec = "libx264", preset="superfast")
+                endTime = datetime.datetime.now()
+                printRuntime(startTime, endTime)
+
+                print("Moive made successfully!")
+            except KeyboardInterrupt as e:
+                print("\n A Keyboard Interrupt occured.")
+                error_statement = (str(datetime.datetime.now().replace(microsecond=0)), "Keyboard Interrupt")
+                sys.exit()
+            except Exception as e:
+                print("\nAn Error occurred on: ", file, "\n")
+                error_statement = (str(datetime.datetime.now().replace(microsecond=0)), newMoviePath)
+                error_log.write(printSpacer(length = 100)+"\n")
+                error_log.write("Error occured during video processing: \n" + str(e).splitlines()[0])
+                error_log.write("\n"+str(error_statement)+"\n")
+                error_log.write(printSpacer(length = 100)+"\n")
+                error_log.flush()
            
 
 def main():

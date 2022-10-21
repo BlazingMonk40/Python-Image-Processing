@@ -1,14 +1,14 @@
-from asyncio.windows_events import NULL
-from cgi import print_exception
-from msilib.schema import File
+
 import os
 import sys
 import datetime
-from traceback import print_exc
 import shutil
 
 from PIL import Image
 from moviepy.editor import *
+
+media_path = "M:\\Trailcam"
+pi = True
 
 if(not os.path.exists("BatchResizeLogFiles")):
     os.mkdir("BatchResizeLogFiles")
@@ -45,79 +45,89 @@ def makeFileUpDir(dir):
         os.mkdir(upDirPath)
     return upDirPath
 
+def Process(media_path):
+    media_path = os.path.normpath(media_path)
+    if(not os.path.exists(media_path)): print("No such directory found!")
+    else:
+        startTime = datetime.datetime.now()
+        newDirectory = makeFileUpDir(media_path)#Path to new folder for Resized Videos
+        
+        old_dir = ""
+        count = 0
+        for dir, subdirs, files in os.walk(media_path):
+            
+                #C:\Users\popta\Desktop\100Media\100Media_Resized
+                if(dir == os.path.normpath(media_path)): continue #Don't repeat the root directory
+                dir = os.path.normpath(dir)
+                old_dir_basename = os.path.basename(old_dir)
+                dir_split0 = os.path.basename(os.path.split(dir)[0])
+                if(not old_dir == "" and not old_dir_basename == dir_split0):
+                    newDirectory = os.path.join(os.path.split(newDirectory)[0], os.path.basename(dir))
+                else:
+                    old_dir = dir
+                    dir_name = os.path.basename(dir)
+                    newDirectory = os.path.join(newDirectory, dir_name)
+                if(not os.path.exists(newDirectory)):
+                    os.mkdir(newDirectory)
+                for file in files:
+                    try:
+                        ext = os.path.splitext(file)[-1].lower()
+                        #Check for correct file extension and that the file has not already been resized
+                        if(ext == ".avi" or ext == ".mp4"):
+                            print(dir + "/" + file)
+                            if("__" in file): 
+                                count += 1 
+                                continue
+                            if(newFileName in file): continue
+                            videoName = file                       #Get video name
+                            videoPath = os.path.join(dir,videoName)          #Get video path
+                            video = VideoFileClip(videoPath)       #Get video at video path
+                            
+                            print("\n Already processed: ",count,"\n")             
+                            
+                            newVideoPath = os.path.join(newDirectory,videoName)       #Make new file path for the resized video
+                            
+                            fileStartTime = datetime.datetime.now()
+                            
+                            resizedVideo = video.resize(.75)       #Resize video
+                            #Codecs: libx264, mpeg4, rawvideo, png libvorbis, libvpx || || libx264, mpeg4 
+                            resizedVideo.write_videofile(newVideoPath, codec='libx264', threads = 10)     #Save video to new file path
+                            completedResizeVideoPath = os.path.join(dir,"__"+videoName)
+                            os.rename(videoPath, completedResizeVideoPath)
+                            fileEndTime = datetime.datetime.now()
+                            print("--------------------\n"+videoName+" Compression Start Time: ",fileStartTime.replace(microsecond=0),"\n")
+                            print(videoName+" Compression End Time: ",fileEndTime.replace(microsecond=0))
+                            print("\n"+videoName+" Compression Time to Complete: ",(fileEndTime.replace(microsecond=0) - fileStartTime.replace(microsecond=0)),"\n--------------------\n")
+                            #printFileDone()
+                        else:
+                            print('Wrong file type for file:', file)
+                    except KeyboardInterrupt as e:
+                        print("\n A Keyboard Interrupt occured.")
+                        error_statement = (str(datetime.datetime.now().replace(microsecond=0)), "Keyboard Interrupt")
+                        sys.exit()
+                    except Exception as e:
+                        print("\nAn Error occurred on: ", file, "\n")
+                        error_statement = (str(datetime.datetime.now().replace(microsecond=0)), videoPath)
+                        error_log.write(printSpacer(length = 100)+"\n")
+                        error_log.write("Error occured during video processing: \n" + str(e).splitlines()[0])
+                        error_log.write("\n"+str(error_statement)+"\n")
+                        error_log.write(printSpacer(length = 100)+"\n")
+                        error_log.flush()
+                        #continue
+        
+        endTime = datetime.datetime.now()
+        #os.rename(dir, dir+"_ResizingComplete")
+        print("\n--------------------\nProgram Start Time: "+str(startTime)+"\n")
+        print("Program End Time: ",endTime.replace(microsecond=0),"\n")
+        print("Program Time to Complete: ",(endTime.replace(microsecond=0) - startTime.replace(microsecond=0)),"\n--------------------\n")
+
+
 def VideoProcessing():
     
     if(len(sys.argv) > 1):
-        sys_arg = os.path.normpath(sys.argv[1])
-        if(not os.path.exists(sys_arg)): print("No such directory found!")
-        else:
-            startTime = datetime.datetime.now()
-            newDirectory = makeFileUpDir(sys_arg)#Path to new folder for Resized Videos
-            
-            old_dir = ""
-            for dir, subdirs, files in os.walk(sys_arg):
-                
-                    #C:\Users\popta\Desktop\100Media\100Media_Resized
-                    if(dir == sys.argv[1]): continue #Don't repeat the root directory
-                    dir = os.path.normpath(dir)
-                    old_dir_basename = os.path.basename(old_dir)
-                    dir_split0 = os.path.basename(os.path.split(dir)[0])
-                    if(not old_dir == "" and not old_dir_basename == dir_split0):
-                        newDirectory = os.path.join(os.path.split(newDirectory)[0], os.path.basename(dir))
-                    else:
-                        old_dir = dir
-                        dir_name = os.path.basename(dir)
-                        newDirectory = os.path.join(newDirectory, dir_name)
-                    if(not os.path.exists(newDirectory)):
-                        os.mkdir(newDirectory)
-                    for file in files:
-                        try:
-                            ext = os.path.splitext(file)[-1].lower()
-                            #Check for correct file extension and that the file has not already been resized
-                            if(ext == ".avi" or ext == ".mp4" and not "__" in file):
-                                print(dir + "/" + file)
-                                if(not newFileName in file):
-                                                    
-                                    videoName = file                       #Get video name
-                                    videoPath = os.path.join(dir,videoName)          #Get video path
-                                    video = VideoFileClip(videoPath)       #Get video at video path
-                                    
-                                    newVideoPath = os.path.join(newDirectory,videoName)       #Make new file path for the resized video
-                                    
-                                    fileStartTime = datetime.datetime.now()
-                                    
-                                    resizedVideo = video.resize(.75)       #Resize video
-                                    #Codecs: libx264, mpeg4, rawvideo, png libvorbis, libvpx || || libx264, mpeg4 
-                                    resizedVideo.write_videofile(newVideoPath, codec='libx264', threads = 750)     #Save video to new file path
-                                    completedResizeVideoPath = os.path.join(dir,videoName)
-                                    os.rename(videoPath, completedResizeVideoPath)
-                                    fileEndTime = datetime.datetime.now()
-                                    print("--------------------\n"+videoName+" Compression Start Time: ",fileStartTime.replace(microsecond=0),"\n")
-                                    print(videoName+" Compression End Time: ",fileEndTime.replace(microsecond=0))
-                                    print("\n"+videoName+" Compression Time to Complete: ",(fileEndTime.replace(microsecond=0) - fileStartTime.replace(microsecond=0)),"\n--------------------\n")
-                                    #printFileDone()
-                            else:
-                                print('Wrong file type for file:', file)
-                        except KeyboardInterrupt as e:
-                            print("\n A Keyboard Interrupt occured.")
-                            error_statement = (str(datetime.datetime.now().replace(microsecond=0)), "Keyboard Interrupt")
-                            sys.exit()
-                        except Exception as e:
-                            print("\nAn Error occurred on: ", file, "\n")
-                            error_statement = (str(datetime.datetime.now().replace(microsecond=0)), videoPath)
-                            error_log.write(printSpacer(length = 100)+"\n")
-                            error_log.write("Error occured during video processing: \n" + str(e).splitlines()[0])
-                            error_log.write("\n"+str(error_statement)+"\n")
-                            error_log.write(printSpacer(length = 100)+"\n")
-                            error_log.flush()
-                            #continue
-            
-            endTime = datetime.datetime.now()
-            #os.rename(dir, dir+"_ResizingComplete")
-            print("\n--------------------\nProgram Start Time: "+str(startTime)+"\n")
-            print("Program End Time: ",endTime.replace(microsecond=0),"\n")
-            print("Program Time to Complete: ",(endTime.replace(microsecond=0) - startTime.replace(microsecond=0)),"\n--------------------\n")
-
+        Process(sys.argv[1])
+    elif(os.path.exists(media_path)):
+        Process(media_path)
     else:
         print("Args not found")
             
@@ -239,16 +249,19 @@ def ImageProcessing():
         print("Error! No files recieved.")
 
 def main():
-    if(len(sys.argv) > 2):
-        type = sys.argv[2]
-    else:
-        type = input("For Image Processing Enter '0':\nFor Video Processing Enter '1':\nInput: ")
     try:
-        
-        if type == '0':
-            ImageProcessing()
-        elif type == '1':
-            VideoProcessing()
+        if(len(sys.argv) > 2):
+            type = sys.argv[2]
+        else:
+            if(not pi):
+                type = input("For Image Processing Enter '0':\nFor Video Processing Enter '1':\nInput: ")
+                if type == '0':
+                    ImageProcessing()
+                elif type == '1':
+                    print(media_path)
+                    VideoProcessing()
+            else:
+                VideoProcessing()
     except SystemExit as sys_exit:
         print("System Error.")
         error_log.write(printSpacer('*', 50))
